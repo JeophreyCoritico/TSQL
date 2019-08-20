@@ -50,8 +50,7 @@ Drop PROCEDURE AccountPROC;
 
     Create PROCEDURE AccountPROC @FromAcctNo INT, @ToAcctNo INT, @Amount INT as 
     BEGIN 
-    --Select CONCAT('From account: $', @FromAcctNo-@Amount, ' (-$', @Amount, '), To Account: $', @ToAcctNo+@Amount, ' (+$', @Amount, '), Amount: $', @Amount)
-    
+      
     Update Account SET
     Balance = Balance - @Amount
     where AcctNo = @FromAcctNo;
@@ -63,10 +62,6 @@ Drop PROCEDURE AccountPROC;
     insert into Log(OrigAcct, LogDateTime, RecAcct, Amount)
     VALUES (@FromAcctNo, GetDate(), @ToAcctNo, @Amount);
 
-    -- Declare @Balance INT = @Amount-@FromAcctNo+@ToAcctNo
-    -- INSERT into Account(Balance)
-    -- VALUES
-    -- (@Balance)
 
     END
 
