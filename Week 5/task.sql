@@ -111,6 +111,10 @@ Exec  ADD_CUSTOMER @PCUSTID = 'test', @PCUSTNAME = 'testdude5';
 Select * from customer;
 
 -- ----------------------------------------------------------------------
+Exec  ADD_CUSTOMER @PCUSTID = 1, @PCUSTNAME = 'testdude2';
+Exec  ADD_CUSTOMER @PCUSTID = 2, @PCUSTNAME = 'testdude22';
+Exec  ADD_CUSTOMER @PCUSTID = 3, @PCUSTNAME = 'testdude9';
+go
 
 If OBJECT_ID('DELETE_ALL_CUSTOMERS') is not NULL
 Drop function DELETE_ALL_CUSTOMERS;
@@ -126,16 +130,16 @@ Delete from CUSTOMER
 end
 go
 
-Create Function DELETE_ALL_CUSTOMERS() RETURNS NVARCHAR(30) as
+Create Function DELETE_ALL_CUSTOMERS() RETURNS INT as
 BEGIN
 Declare @NumRows INT
 Select @NumRows = count(*) from (
     select CUSTID from CUSTOMER
 ) a
-return concat('Number of rows deleted: ', @NumRows)
+return @NumRows
 END;
 
 Begin
-Select dbo.DELETE_ALL_CUSTOMERS(); 
+Select dbo.DELETE_ALL_CUSTOMERS() as 'Number of rows deleted:';
 exec DeleteCUST;
 End;
