@@ -330,3 +330,45 @@ exec GET_CUSTOMER_STRING @pcustid = 69;
 
 -- ------------------------------ UPD_CUST_SALESYTD ------------------------------
 
+If OBJECT_ID('UPD_CUST_SALESYTD') is not NULL
+Drop procedure UPD_CUST_SALESYTD;
+Go
+
+create PROCEDURE UPD_CUST_SALESYTD
+    @pcustid int,
+    @pamt int
+AS
+Begin
+    begin TRY
+        Declare @NumRows INT
+    Select @NumRows = count(*)
+    from (
+    select CUSTID
+        from CUSTOMER
+) a
+
+if @pamt < -999.99 or @pamt > 999.99
+throw 50080, 'Amount is out of range', 1
+
+if @pcustid > @NumRows
+THROW 50070, 'Customer ID is not found', 1
+
+    update CUSTOMER SET
+SALES_YTD = SALES_YTD + @pamt
+where CUSTID = @pcustid;
+end TRY
+
+begin CATCH
+    If ERROR_NUMBER() = 50080
+    THROW
+    if ERROR_NUMBER() = 50070
+    THROW
+end CATCH
+End
+
+exec UPD_CUST_SALESYTD @pcustid = 1, @pamt = 500;
+exec GET_CUSTOMER_STRING @pcustid = 1;
+
+exec UPD_CUST_SALESYTD @pcustid = 1, @pamt = 100000;
+
+select * from CUSTOMER
