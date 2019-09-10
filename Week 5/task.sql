@@ -87,7 +87,7 @@ GO
 
 
 
--- ----------------------------------------------------------------------
+-- ------------------------------ ADD_CUSTOMER ------------------------------  
 
 If OBJECT_ID('ADD_CUSTOMER') is not NULL
 Drop procedure ADD_CUSTOMER;
@@ -143,7 +143,7 @@ Exec  ADD_CUSTOMER @PCUSTID = 'test', @PCUSTNAME = 'testdude5';
 Select *
 from customer;
 
--- ----------------------------------------------------------------------
+-- ------------------------------ DELETE_ALL_CUSTOMERS ------------------------------
 Exec  ADD_CUSTOMER @PCUSTID = 1, @PCUSTNAME = 'testdude2';
 Exec  ADD_CUSTOMER @PCUSTID = 2, @PCUSTNAME = 'testdude22';
 Exec  ADD_CUSTOMER @PCUSTID = 3, @PCUSTNAME = 'testdude9';
@@ -180,7 +180,7 @@ Begin
     exec DeleteCUST;
 End;
 
--- ----------------------------------------------------------------------
+-- ------------------------------ ADD_PRODUCT ------------------------------
 IF OBJECT_ID('ADD_PRODUCT') is not null
 drop PROCEDURE ADD_PRODUCT;
 go
@@ -192,7 +192,7 @@ create PROCEDURE ADD_PRODUCT
 as
 begin
     Begin TRY
-        --throw 51000, 'this is a test message', 1 --this is to test error code 50000
+        --throw 51000, 'this is a test message', 1 --this is to test error code
 
         if @pprodid < 1000 or @pprodid > 2500
         THROW 50040, 'Product ID is out of range', 1
@@ -214,9 +214,9 @@ begin
             THROW
         Else 
             BEGIN
-                Declare @ERRORMESSAGE NVARCHAR(MAX) = ERROR_MESSAGE();
-                Throw 50000, @ERRORMESSAGE, 1
-            End;
+        Declare @ERRORMESSAGE NVARCHAR(MAX) = ERROR_MESSAGE();
+        Throw 50000, @ERRORMESSAGE, 1
+    End;
     End CATCH
 END
 
@@ -239,6 +239,94 @@ Exec ADD_PRODUCT @pprodid = 'test', @pproductname = 'mango', @pprice = 20;
 Exec ADD_PRODUCT @pprodid = 2212, @pproductname = 'mango', @pprice = 'test';
 
 
-select * from PRODUCT;
+select *
+from PRODUCT;
 
+-- ------------------------------ DELETE_ALL_PRODUCTS_FROM_DB ------------------------------
+
+If OBJECT_ID('DELETE_ALL_PRODUCTS') is not NULL
+Drop function DELETE_ALL_PRODUCTS;
+Go
+
+If OBJECT_ID('DeletePROD') is not NULL
+Drop procedure DeletePROD;
+Go
+
+create PROCEDURE DeletePROD
+as
+Begin
+    begin try 
+    Delete from PRODUCT
+    end TRY
     
+        begin catch 
+    begin
+        DECLARE @ERRORMESSAGE NVARCHAR(MAX) = ERROR_MESSAGE();
+        throw 50000, @ERRORMESSAGE, 1
+    END
+    end catch
+end
+go
+
+Create Function DELETE_ALL_PRODUCTS() RETURNS INT as
+BEGIN
+    Declare @NumRows INT
+    Select @NumRows = count(*)
+    from (
+    select PRODID
+        from PRODUCT
+) a
+    return @NumRows
+END;
+
+Begin
+    Select dbo.DELETE_ALL_PRODUCTS() as 'Number of rows deleted:';
+    exec DeletePROD;
+End;
+
+select *
+from PRODUCT;
+
+-- ------------------------------ GET_CUSTOMER_STRING ------------------------------
+
+If OBJECT_ID('GET_CUSTOMER_STRING') is not NULL
+Drop procedure GET_CUSTOMER_STRING;
+Go
+
+create PROCEDURE GET_CUSTOMER_STRING
+    @pcustid int
+as
+BEGIN
+    begin try 
+
+Declare @StringofCUST VARCHAR(MAX)
+
+select @StringofCUST = CONCAT('CustID: ', CUSTID, '   ', 'Name: ', CUSTNAME, '   ', 'Status ', STATUS, '   ', 'SalesYTD: ', SALES_YTD, '   ')
+    from CUSTOMER
+    where CUSTID = @pcustid;
+
+if @StringofCUST is NULL
+throw 50060, 'Customer ID not found', 1
+
+SELECT @StringofCUST as 'Customer:';
+END TRY
+
+begin catch 
+    if ERROR_NUMBER() = 50060
+    THROW
+end catch
+END;
+
+Exec  ADD_CUSTOMER @PCUSTID = 1, @PCUSTNAME = 'testdude2';
+Exec  ADD_CUSTOMER @PCUSTID = 2, @PCUSTNAME = 'testdude22';
+Exec  ADD_CUSTOMER @PCUSTID = 3, @PCUSTNAME = 'testdude9';
+
+select *
+from CUSTOMER;
+-- Should work
+exec GET_CUSTOMER_STRING @pcustid = 2;
+-- Should not work
+exec GET_CUSTOMER_STRING @pcustid = 69;
+
+-- ------------------------------ UPD_CUST_SALESYTD ------------------------------
+
