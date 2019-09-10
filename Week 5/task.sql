@@ -339,18 +339,20 @@ create PROCEDURE UPD_CUST_SALESYTD
     @pamt int
 AS
 Begin
-    begin TRY
-        Declare @NumRows INT
-    Select @NumRows = count(*)
-    from (
-    select CUSTID
-        from CUSTOMER
-) a
+--     begin TRY
+--         Declare @NumRows INT
+--     Select @NumRows = count(*)
+--     from (
+--     select CUSTID
+--         from CUSTOMER
+-- ) a
+
+
 
 if @pamt < -999.99 or @pamt > 999.99
 throw 50080, 'Amount is out of range', 1
 
-if @pcustid > @NumRows
+-- if @pcustid > @NumRows
 THROW 50070, 'Customer ID is not found', 1
 
     update CUSTOMER SET
@@ -366,9 +368,49 @@ begin CATCH
 end CATCH
 End
 
-exec UPD_CUST_SALESYTD @pcustid = 1, @pamt = 500;
-exec GET_CUSTOMER_STRING @pcustid = 1;
-
+-- should work
+exec UPD_CUST_SALESYTD @pcustid = 1, @pamt = -500;
+-- error code 50080 - amount is out of range
 exec UPD_CUST_SALESYTD @pcustid = 1, @pamt = 100000;
+-- error code 50070 - custID does not exist
+exec UPD_CUST_SALESYTD @pcustid = 69, @pamt = 500;
 
 select * from CUSTOMER
+
+-- ------------------------------ GET_PROD_STRING ------------------------------
+
+If OBJECT_ID('GET_PROD_STRING') is not NULL
+Drop procedure GET_PROD_STRING;
+Go
+
+create PROCEDURE GET_PROD_STRING
+    @pprodid int
+as
+BEGIN
+    begin try 
+
+Declare @StringofPROD VARCHAR(MAX)
+
+select @StringofPROD = CONCAT('Prodid: ', PRODID, '   ', 'Name: ', PRODNAME, '   ', 'Price ', SELLING_PRICE, '   ', 'SalesYTD: ', SALES_YTD, '   ')
+    from PRODUCT
+    where PRODID = @pprodid;
+
+if @StringofPROD is NULL
+throw 50090, 'Product ID not found', 1
+
+SELECT @StringofPROD as 'Customer:';
+END TRY
+
+begin catch 
+    if ERROR_NUMBER() = 50090
+    THROW
+end catch
+END;
+
+Exec ADD_PRODUCT @pprodid = 2209, @pproductname = 'banana', @pprice = 20;
+Exec ADD_PRODUCT @pprodid = 2210, @pproductname = 'apple', @pprice = 40;
+Exec ADD_PRODUCT @pprodid = 2211, @pproductname = 'mango', @pprice = 70;
+
+exec GET_PROD_STRING @pprodid = 2210;
+exec GET_PROD_STRING @pprodid = 7;
+select * from PRODUCT
