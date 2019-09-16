@@ -339,28 +339,24 @@ create PROCEDURE UPD_CUST_SALESYTD
     @pamt int
 AS
 Begin
---     begin TRY
---         Declare @NumRows INT
---     Select @NumRows = count(*)
---     from (
---     select CUSTID
---         from CUSTOMER
--- ) a
+begin TRY
 
-
+if not exists (
+    select @pcustid
+    from CUSTOMER
+    where CUSTID = @pcustid
+)   
+throw 50070, 'Customer ID is not found', 1
 
 if @pamt < -999.99 or @pamt > 999.99
 throw 50080, 'Amount is out of range', 1
-
--- if @pcustid > @NumRows
-THROW 50070, 'Customer ID is not found', 1
 
     update CUSTOMER SET
 SALES_YTD = SALES_YTD + @pamt
 where CUSTID = @pcustid;
 end TRY
 
-begin CATCH
+begin CATCH 
     If ERROR_NUMBER() = 50080
     THROW
     if ERROR_NUMBER() = 50070
@@ -369,11 +365,11 @@ end CATCH
 End
 
 -- should work
-exec UPD_CUST_SALESYTD @pcustid = 1, @pamt = -500;
+exec UPD_CUST_SALESYTD @pcustid = 1, @pamt = 500;
 -- error code 50080 - amount is out of range
 exec UPD_CUST_SALESYTD @pcustid = 1, @pamt = 100000;
 -- error code 50070 - custID does not exist
-exec UPD_CUST_SALESYTD @pcustid = 69, @pamt = 500;
+exec UPD_CUST_SALESYTD @pcustid = 70, @pamt = 500;
 
 select * from CUSTOMER
 
@@ -414,3 +410,5 @@ Exec ADD_PRODUCT @pprodid = 2211, @pproductname = 'mango', @pprice = 70;
 exec GET_PROD_STRING @pprodid = 2210;
 exec GET_PROD_STRING @pprodid = 7;
 select * from PRODUCT
+
+-- ------------------------------ GET_PROD_SALESYTD ------------------------------
