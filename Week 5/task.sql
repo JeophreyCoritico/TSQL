@@ -369,7 +369,7 @@ exec UPD_CUST_SALESYTD @pcustid = 1, @pamt = 500;
 -- error code 50080 - amount is out of range
 exec UPD_CUST_SALESYTD @pcustid = 1, @pamt = 100000;
 -- error code 50070 - custID does not exist
-exec UPD_CUST_SALESYTD @pcustid = 70, @pamt = 500;
+exec UPD_CUST_SALESYTD @pcustid = 30, @pamt = 500;
 
 select * from CUSTOMER
 
@@ -411,4 +411,47 @@ exec GET_PROD_STRING @pprodid = 2210;
 exec GET_PROD_STRING @pprodid = 7;
 select * from PRODUCT
 
--- ------------------------------ GET_PROD_SALESYTD ------------------------------
+-- ------------------------------ UPD_PROD_SALESYTD ------------------------------
+
+If OBJECT_ID('UPD_PROD_SALESYTD') is not NULL
+Drop procedure UPD_PROD_SALESYTD;
+Go
+
+create PROCEDURE UPD_PROD_SALESYTD
+    @pprodid int,
+    @pamt int
+AS
+Begin
+begin TRY
+
+if not exists (
+    select @pprodid
+    from PRODUCT
+    where PRODID = @pprodid
+)   
+throw 50100, 'Product ID is not found', 1
+
+if @pamt < -999.99 or @pamt > 999.99
+throw 50110, 'Amount is out of range', 1
+
+    update PRODUCT SET
+SALES_YTD = SALES_YTD + @pamt
+where PRODID = @pprodid;
+end TRY
+
+begin CATCH 
+    If ERROR_NUMBER() = 50100
+    THROW
+    if ERROR_NUMBER() = 50110
+    THROW
+end CATCH
+End
+
+-- should work
+exec UPD_PROD_SALESYTD @pprodid = 2209, @pamt = 500;
+-- error code 50080 - amount is out of range
+exec UPD_PROD_SALESYTD @pprodid = 2209, @pamt = 500000;
+-- error code 50070 - custID does not exist
+exec UPD_PROD_SALESYTD @pprodid = 2, @pamt = 500;
+
+select * from PRODUCT
