@@ -564,7 +564,7 @@ End
 
 -- should work
 exec ADD_SIMPLE_SALE  @pcustid = 3, @pprodid = 2000, @pqty = 20;
-exec ADD_SIMPLE_SALE  @pcustid = 22, @pprodid = 2000, @pqty = 20;
+exec ADD_SIMPLE_SALE  @pcustid = 22, @pprodid = 2000, @pqty = 30;
 -- 50140 sale qty is out of range
 exec ADD_SIMPLE_SALE  @pcustid = 3, @pprodid = 2000, @pqty = 999999;
 -- 50150 customer is not ok
@@ -576,3 +576,25 @@ exec ADD_SIMPLE_SALE  @pcustid = 3, @pprodid = 5, @pqty = 20;
 
 select * from CUSTOMER
 select * from PRODUCT
+
+-- ------------------------------ SUM_CUSTOMER_SALESYTD ------------------------------
+
+If OBJECT_ID('SUM_CUSTOMER_SALESYTD') is not NULL
+Drop procedure SUM_CUSTOMER_SALESYTD;
+Go
+
+create PROCEDURE SUM_CUSTOMER_SALESYTD @sumcustsales int OUTPUT as
+begin
+select @sumcustsales = sum(SALES_YTD) 
+from(
+    select SALES_YTD
+    from CUSTOMER
+)a
+return @sumcustsales
+end
+
+begin
+DECLARE @output NVARCHAR(MAX);
+exec SUM_CUSTOMER_SALESYTD @sumcustsales = @output OUTPUT; 
+SELECT @output as 'sum';
+end

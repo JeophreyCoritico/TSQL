@@ -1,6 +1,7 @@
 -- add customer(s)
 exec ADD_CUSTOMER @PCUSTID = 3, @PCUSTNAME = 'person1'
 exec ADD_CUSTOMER @PCUSTID = 2, @PCUSTNAME = 'person2'
+exec ADD_CUSTOMER @PCUSTID = 22, @PCUSTNAME = 'person3'
 
 -- delete customer(s)
 Begin
