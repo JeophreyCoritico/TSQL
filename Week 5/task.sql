@@ -509,46 +509,44 @@ Go
 create PROCEDURE ADD_SIMPLE_SALE @pcustid int, @pprodid int, @pqty INT as
 BEGIN
 begin TRY
+DECLARE
+@thiscustid int = @pcustid,
+@thisprodid int = @pprodid;
 
 DECLARE 
 @prices int 
-select @pprodid from (
-    select SELLING_PRICE
-    from PRODUCT
-    where PRODID = @pprodid
-) a;
--- @prices int = SELLING_PRICE from PRODUCT where PRODID = @pprodid;  
+select @prices = SELLING_PRICE from PRODUCT where PRODID = @pprodid;  
+
 DECLARE
 @pqtypriceprod int = @pqty * @prices;
-
 
 if not exists (
     select @pcustid
     from CUSTOMER
-    where CUSTID = @pcustid
+    where CUSTID = @thiscustid
 )   
 throw 50160, 'Customer ID is not found', 1
 
 
 if not exists (
-    select @pprodid
+    select @thisprodid
     from PRODUCT
-    where PRODID = @pprodid
+    where PRODID = @thisprodid
 )   
 throw 50170, 'Product ID is not found', 1
 
 if exists (
-    SELECT @pcustid
+    SELECT @thiscustid
     from CUSTOMER
-    WHERE STATUS = 'SUSPEND'
+    WHERE CUSTID = @thiscustid and STATUS = 'SUSPEND'
 )
 THROW 50150, 'Customer status is not OK', 1
 
 if @pqty < 1 or @pqty > 999
 THROW 50140, 'Sale quantity is out of range', 1
 
-exec UPD_CUST_SALESYTD @pcustid = @pcustid, @pamt = @pqtypriceprod;
-exec UPD_PROD_SALESYTD @pprodid = @pprodid, @pamt = @pqtypriceprod
+exec UPD_CUST_SALESYTD @pcustid = @thiscustid, @pamt = @pqtypriceprod;
+exec UPD_PROD_SALESYTD @pprodid = @thisprodid, @pamt = @pqtypriceprod;
 
 end TRY
 
@@ -564,7 +562,17 @@ begin CATCH
 end CATCH
 End
 
-exec ADD_SIMPLE_SALE  @pcustid = 3, @pstatus = 'test';
+-- should work
+exec ADD_SIMPLE_SALE  @pcustid = 3, @pprodid = 2000, @pqty = 20;
+exec ADD_SIMPLE_SALE  @pcustid = 22, @pprodid = 2000, @pqty = 20;
+-- 50140 sale qty is out of range
+exec ADD_SIMPLE_SALE  @pcustid = 3, @pprodid = 2000, @pqty = 999999;
+-- 50150 customer is not ok
+exec ADD_SIMPLE_SALE  @pcustid = 2, @pprodid = 2000, @pqty = 20;
+-- 50160 cust id not found
+exec ADD_SIMPLE_SALE  @pcustid = 5, @pprodid = 2000, @pqty = 20;
+-- 50170 prod id not found
+exec ADD_SIMPLE_SALE  @pcustid = 3, @pprodid = 5, @pqty = 20;
 
 select * from CUSTOMER
 select * from PRODUCT
