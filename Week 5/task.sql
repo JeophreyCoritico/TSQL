@@ -596,5 +596,27 @@ end
 begin
 DECLARE @output NVARCHAR(MAX);
 exec SUM_CUSTOMER_SALESYTD @sumcustsales = @output OUTPUT; 
-SELECT @output as 'sum';
+SELECT @output as 'sum of customer sales_ytd';
+end
+
+-- ------------------------------ SUM_PRODUCT_SALESYTD ------------------------------
+
+If OBJECT_ID('SUM_PRODUCT_SALESYTD') is not NULL
+Drop procedure SUM_PRODUCT_SALESYTD;
+Go
+
+create PROCEDURE SUM_PRODUCT_SALESYTD @sumprodsales int OUTPUT as
+begin
+select @sumprodsales = sum(SALES_YTD) 
+from(
+    select SALES_YTD
+    from PRODUCT
+)a
+return @sumprodsales
+end
+
+begin
+DECLARE @output NVARCHAR(MAX);
+exec SUM_PRODUCT_SALESYTD @sumprodsales = @output OUTPUT; 
+SELECT @output as 'sum of product sales_ytd';
 end
