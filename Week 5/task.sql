@@ -666,7 +666,8 @@ begin
 
     exec GET_ALL_CUSTOMERS @POUTCUR = @CUR OUTPUT;
 
-    declare @custID Int,
+    declare 
+@custID Int,
 @CUSTNAME nvarchar(100),
 @SalesYTD money,
 @Status NVARCHAR(7);
@@ -676,8 +677,53 @@ begin
     while @@FETCH_STATUS = 0
 
     begin
-        print(concat('ID: ', @custID, ' ', 'Name: ', @CUSTNAME, ' ', 'Sales YTD: ', @salesytd, ' ', 'Status: ', @status))
+        print(concat('ID: ', @custID, ', ', 'Name: ', @CUSTNAME, ', ', 'Sales YTD: ', @salesytd, ', ', 'Status: ', @status))
         FETCH next from @CUR into @custID, @CUSTNAME, @salesytd, @Status;
+    END
+
+    close @CUR
+    deallocate @CUR
+end 
+
+-- ------------------------------ GET_ALL_PRODUCTS ------------------------------
+
+If OBJECT_ID('GET_ALL_PRODUCTS') is not NULL
+Drop procedure GET_ALL_PRODUCTS;
+Go
+
+create PROCEDURE GET_ALL_PRODUCTS
+    @POUTCUR CURSOR VARYING OUTPUT
+as
+begin
+    begin try 
+set @POUTCUR = CURSOR for SELECT *
+    from PRODUCT;
+    open @POUTCUR;
+end TRY
+begin catch 
+declare @ERRORMESSAGE NVARCHAR(MAX) = ERROR_MESSAGE();
+throw 50000, @ERRORMESSAGE, 1
+end CATCH
+end
+
+begin
+    declare @CUR CURSOR;
+
+    exec GET_ALL_PRODUCTS @POUTCUR = @CUR OUTPUT;
+
+    declare 
+@prodID Int,
+@PRODNAME nvarchar(100),
+@SELLING_PRICE money,
+@SALES_YTD money;
+
+    fetch next from @CUR into @prodID, @PRODNAME, @SELLING_PRICE, @SALES_YTD;
+
+    while @@FETCH_STATUS = 0
+
+    begin
+        print(concat('ID: ', @prodID, ', ', 'Name: ', @PRODNAME, ', ', 'Selling Price: ', @SELLING_PRICE, ', ', 'Sales_YTD: ', @SALES_YTD))
+        FETCH next from @CUR into @prodID, @PRODNAME, @SELLING_PRICE, @SALES_YTD;
     END
 
     close @CUR
