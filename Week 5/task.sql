@@ -339,7 +339,7 @@ create PROCEDURE UPD_CUST_SALESYTD
     @pamt int
 AS
 Begin
-begin TRY
+    begin TRY
 
 if not exists (
     select @pcustid
@@ -371,7 +371,8 @@ exec UPD_CUST_SALESYTD @pcustid = 1, @pamt = 100000;
 -- error code 50070 - custID does not exist
 exec UPD_CUST_SALESYTD @pcustid = 30, @pamt = 500;
 
-select * from CUSTOMER
+select *
+from CUSTOMER
 
 -- ------------------------------ GET_PROD_STRING ------------------------------
 
@@ -409,7 +410,8 @@ Exec ADD_PRODUCT @pprodid = 2211, @pproductname = 'mango', @pprice = 70;
 
 exec GET_PROD_STRING @pprodid = 2210;
 exec GET_PROD_STRING @pprodid = 7;
-select * from PRODUCT
+select *
+from PRODUCT
 
 -- ------------------------------ UPD_PROD_SALESYTD ------------------------------
 
@@ -422,7 +424,7 @@ create PROCEDURE UPD_PROD_SALESYTD
     @pamt int
 AS
 Begin
-begin TRY
+    begin TRY
 
 if not exists (
     select @pprodid
@@ -454,7 +456,8 @@ exec UPD_PROD_SALESYTD @pprodid = 2209, @pamt = 500000;
 -- error code 50070 - custID does not exist
 exec UPD_PROD_SALESYTD @pprodid = 2, @pamt = 500;
 
-select * from PRODUCT
+select *
+from PRODUCT
 
 -- ------------------------------ UPD_CUSTOMER_STATUS ------------------------------
 
@@ -462,9 +465,12 @@ If OBJECT_ID('UPD_CUSTOMER_STATUS') is not NULL
 Drop procedure UPD_CUSTOMER_STATUS;
 Go
 
-create PROCEDURE UPD_CUSTOMER_STATUS @pcustid int, @pstatus NVARCHAR(7) AS
-begin 
-BEGIN TRY
+create PROCEDURE UPD_CUSTOMER_STATUS
+    @pcustid int,
+    @pstatus NVARCHAR(7)
+AS
+begin
+    BEGIN TRY
 
 if not exists (
     select @pcustid
@@ -498,7 +504,8 @@ exec UPD_CUSTOMER_STATUS @pcustid = 40, @pstatus = 'suspend';
 -- 50130 Invalid status value
 exec UPD_CUSTOMER_STATUS @pcustid = 3, @pstatus = 'test';
 
-select * from CUSTOMER
+select *
+from CUSTOMER
 
 -- ------------------------------ ADD_SIMPLE_SALE ------------------------------
 
@@ -506,16 +513,22 @@ If OBJECT_ID('ADD_SIMPLE_SALE') is not NULL
 Drop procedure ADD_SIMPLE_SALE;
 Go
 
-create PROCEDURE ADD_SIMPLE_SALE @pcustid int, @pprodid int, @pqty INT as
+create PROCEDURE ADD_SIMPLE_SALE
+    @pcustid int,
+    @pprodid int,
+    @pqty INT
+as
 BEGIN
-begin TRY
+    begin TRY
 DECLARE
 @thiscustid int = @pcustid,
 @thisprodid int = @pprodid;
 
 DECLARE 
 @prices int 
-select @prices = SELLING_PRICE from PRODUCT where PRODID = @pprodid;  
+select @prices = SELLING_PRICE
+    from PRODUCT
+    where PRODID = @pprodid;  
 
 DECLARE
 @pqtypriceprod int = @pqty * @prices;
@@ -574,8 +587,10 @@ exec ADD_SIMPLE_SALE  @pcustid = 5, @pprodid = 2000, @pqty = 20;
 -- 50170 prod id not found
 exec ADD_SIMPLE_SALE  @pcustid = 3, @pprodid = 5, @pqty = 20;
 
-select * from CUSTOMER
-select * from PRODUCT
+select *
+from CUSTOMER
+select *
+from PRODUCT
 
 -- ------------------------------ SUM_CUSTOMER_SALESYTD ------------------------------
 
@@ -583,20 +598,22 @@ If OBJECT_ID('SUM_CUSTOMER_SALESYTD') is not NULL
 Drop procedure SUM_CUSTOMER_SALESYTD;
 Go
 
-create PROCEDURE SUM_CUSTOMER_SALESYTD @sumcustsales int OUTPUT as
+create PROCEDURE SUM_CUSTOMER_SALESYTD
+    @sumcustsales int OUTPUT
+as
 begin
-select @sumcustsales = sum(SALES_YTD) 
-from(
+    select @sumcustsales = sum(SALES_YTD)
+    from(
     select SALES_YTD
-    from CUSTOMER
+        from CUSTOMER
 )a
-return @sumcustsales
+    return @sumcustsales
 end
 
 begin
-DECLARE @output NVARCHAR(MAX);
-exec SUM_CUSTOMER_SALESYTD @sumcustsales = @output OUTPUT; 
-SELECT @output as 'sum of customer sales_ytd';
+    DECLARE @output NVARCHAR(MAX);
+    exec SUM_CUSTOMER_SALESYTD @sumcustsales = @output OUTPUT;
+    SELECT @output as 'sum of customer sales_ytd';
 end
 
 -- ------------------------------ SUM_PRODUCT_SALESYTD ------------------------------
@@ -605,18 +622,64 @@ If OBJECT_ID('SUM_PRODUCT_SALESYTD') is not NULL
 Drop procedure SUM_PRODUCT_SALESYTD;
 Go
 
-create PROCEDURE SUM_PRODUCT_SALESYTD @sumprodsales int OUTPUT as
+create PROCEDURE SUM_PRODUCT_SALESYTD
+    @sumprodsales int OUTPUT
+as
 begin
-select @sumprodsales = sum(SALES_YTD) 
-from(
+    select @sumprodsales = sum(SALES_YTD)
+    from(
     select SALES_YTD
-    from PRODUCT
+        from PRODUCT
 )a
-return @sumprodsales
+    return @sumprodsales
 end
 
 begin
-DECLARE @output NVARCHAR(MAX);
-exec SUM_PRODUCT_SALESYTD @sumprodsales = @output OUTPUT; 
-SELECT @output as 'sum of product sales_ytd';
+    DECLARE @output NVARCHAR(MAX);
+    exec SUM_PRODUCT_SALESYTD @sumprodsales = @output OUTPUT;
+    SELECT @output as 'sum of product sales_ytd';
 end
+
+-- ------------------------------ GET_ALL_CUSTOMERS ------------------------------
+
+If OBJECT_ID('GET_ALL_CUSTOMERS') is not NULL
+Drop procedure GET_ALL_CUSTOMERS;
+Go
+
+create PROCEDURE GET_ALL_CUSTOMERS
+    @POUTCUR CURSOR VARYING OUTPUT
+as
+begin
+    begin try 
+set @POUTCUR = CURSOR for SELECT *
+    from CUSTOMER;
+    open @POUTCUR;
+end TRY
+begin catch 
+declare @ERRORMESSAGE NVARCHAR(MAX) = ERROR_MESSAGE();
+throw 50000, @ERRORMESSAGE, 1
+end CATCH
+end
+
+begin
+    declare @CUR CURSOR;
+
+    exec GET_ALL_CUSTOMERS @POUTCUR = @CUR OUTPUT;
+
+    declare @custID Int,
+@CUSTNAME nvarchar(100),
+@SalesYTD money,
+@Status NVARCHAR(7);
+
+    fetch next from @CUR into @custid, @CUSTNAME, @salesytd, @status;
+
+    while @@FETCH_STATUS = 0
+
+    begin
+        print(concat('ID: ', @custID, ' ', 'Name: ', @CUSTNAME, ' ', 'Sales YTD: ', @salesytd, ' ', 'Status: ', @status))
+        FETCH next from @CUR into @custID, @CUSTNAME, @salesytd, @Status;
+    END
+
+    close @CUR
+    deallocate @CUR
+end 
