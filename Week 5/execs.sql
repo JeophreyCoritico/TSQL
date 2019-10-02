@@ -20,6 +20,13 @@ exec UPD_CUST_SALESYTD @pcustid = 2, @pamt = 0;
 exec UPD_CUSTOMER_STATUS @pcustid = 3, @pstatus = 'ok';
 exec UPD_CUSTOMER_STATUS @pcustid = 2, @pstatus = 'suspend';
 
+-- sum cust sales
+begin
+DECLARE @output NVARCHAR(MAX);
+exec SUM_CUSTOMER_SALESYTD @sumcustsales = @output OUTPUT; 
+SELECT @output as 'sum of customer sales_ytd';
+end
+
 -----------------------------------------------------------------------------------
 
 -- add product(s)
@@ -40,6 +47,13 @@ exec GET_PROD_STRING @pprodid = 2000;
 exec UPD_PROD_SALESYTD @pprodid = 2000, @pamt = 500;
 exec UPD_PROD_SALESYTD @pprodid = 2099, @pamt = 700;
 exec UPD_PROD_SALESYTD @pprodid = 2209, @pamt = 250;
+
+-- sum prod sales
+begin
+DECLARE @output2 NVARCHAR(MAX);
+exec SUM_PRODUCT_SALESYTD @sumprodsales = @output2 OUTPUT; 
+SELECT @output2 as 'sum of product sales_ytd';
+end
 
 -----------------------------------------------------------------------------------
 
