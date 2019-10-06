@@ -683,7 +683,7 @@ begin
 
     close @CUR
     deallocate @CUR
-end 
+end
 
 -- ------------------------------ GET_ALL_PRODUCTS ------------------------------
 
@@ -728,4 +728,82 @@ begin
 
     close @CUR
     deallocate @CUR
-end 
+end
+
+-- ------------------------------ ADD_LOCATION ------------------------------
+
+If OBJECT_ID('ADD_LOCATION') is not NULL
+Drop procedure ADD_LOCATION;
+Go
+
+Create PROCEDURE ADD_LOCATION
+    @PLOCCODE NVARCHAR(5),
+    @PMINQTY INT,
+    @PMAXQTY INT
+as
+begin
+    BEGIN TRY
+
+    -- DECLARE @lengthcheck NVARCHAR(5) = '12345';
+
+        if @PMINQTY < 0 Or @PMINQTY > 999
+        throw 50200, 'Minimum Qty is out of range', 1
+        
+        if @PMAXQTY < 0 Or @PMAXQTY > 999
+        throw 50210, 'Maximum Qty is out of range', 1
+
+        if @PMINQTY > @PMAXQTY
+        THROW 50220, 'Minimum Qty larger than Maximum Qty', 1
+
+        if @PLOCCODE like '[A-Za-z]%' or @PLOCCODE > 99 
+        THROW 50190, 'Location Code length invalid', 1
+
+        Insert into [LOCATION]
+        (LOCID, MINQTY, MAXQTY)
+    values
+        ('loc' + @PLOCCODE, @PMINQTY, @PMAXQTY);
+
+    End TRY
+
+    BEGIN CATCH
+        IF ERROR_NUMBER() = 2627
+            Throw 50180, 'Duplicate Location ID', 1 
+        else if ERROR_NUMBER() = 50190
+        THROW
+        else if ERROR_NUMBER() = 50200
+        THROW
+        else if ERROR_NUMBER() = 50210
+        THROW
+        else if ERROR_NUMBER() = 50220
+        THROW
+            BEGIN
+        Declare @ERRORMESSAGE NVARCHAR(MAX) = ERROR_MESSAGE();
+        throw 50000, @ERRORMESSAGE, 1
+    END;
+    End CATCH;
+END;
+GO
+-- should work
+exec ADD_LOCATION @PLOCCODE = 71, @PMINQTY = 0, @PMAXQTY = 30;
+exec ADD_LOCATION @PLOCCODE = 99, @PMINQTY = 66, @PMAXQTY = 777;
+exec ADD_LOCATION @PLOCCODE = 24, @PMINQTY = 6, @PMAXQTY = 44;
+
+-- ERROR 50190, location code lengthinvalid
+exec ADD_LOCATION @PLOCCODE = 222, @PMINQTY = 9, @PMAXQTY = 200;
+go
+exec ADD_LOCATION @PLOCCODE = aa, @PMINQTY = 9, @PMAXQTY = 200;
+
+-- ERROR 50200, Min Qty is out of range
+exec ADD_LOCATION @PLOCCODE = 12, @PMINQTY = -27, @PMAXQTY = 20;
+exec ADD_LOCATION @PLOCCODE = 12, @PMINQTY = 2003, @PMAXQTY = 20;
+
+-- ERROR 50210, Max Qty is out of range
+exec ADD_LOCATION @PLOCCODE = 26, @PMINQTY = 22, @PMAXQTY = -42;
+exec ADD_LOCATION @PLOCCODE = 26, @PMINQTY = 22, @PMAXQTY = 3005;
+
+--ERROR 50220, Min Qty is larger than Max Qty
+exec ADD_LOCATION @PLOCCODE = 31, @PMINQTY = 67, @PMAXQTY = 35;
+
+select *
+from [LOCATION];
+
