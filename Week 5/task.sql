@@ -836,6 +836,12 @@ DECLARE
 
 
     DECLARE @Id INT
+    set @Id = 0
+    Select @Id = MAX(SALEID)
+    from (
+    select SALEID
+        from SALE
+) a
     set @Id = @Id + 1
 
 if not exists (
@@ -895,4 +901,30 @@ THROW
     END;
 end CATCH
 End
+GO
 
+-- should work
+exec ADD_COMPLEX_SALE @pcustid = 3, @pprodid = 2000, @pqty = 20, @pdate = '20191007';
+go
+select * from SALE
+exec ADD_COMPLEX_SALE @pcustid = 22, @pprodid = 2000, @pqty = 30, @pdate = '20000922';
+go
+select * from SALE
+exec ADD_COMPLEX_SALE @pcustid = 22, @pprodid = 2209, @pqty = 10, @pdate = '19990921';
+go
+select * from SALE
+
+-- ERROR 50230, sale quantity out of range
+exec ADD_COMPLEX_SALE @pcustid = 3, @pprodid = 2209, @pqty = 2345, @pdate = '19990921';
+
+-- ERROR 50240, customer status is not OK
+exec ADD_COMPLEX_SALE @pcustid = 2, @pprodid = 2209, @pqty = 10, @pdate = '19990921';
+
+-- ERROR 50250, date not valid
+exec ADD_COMPLEX_SALE @pcustid = 3, @pprodid = 2209, @pqty = 10, @pdate = 'test';
+
+-- ERROR 50260, customer not found
+exec ADD_COMPLEX_SALE @pcustid = 11, @pprodid = 2209, @pqty = 10, @pdate = '19990921';
+
+-- ERROR 50270, product not found
+exec ADD_COMPLEX_SALE @pcustid = 3, @pprodid = 1234, @pqty = 10, @pdate = '19990921';
