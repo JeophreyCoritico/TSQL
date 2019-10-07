@@ -851,7 +851,6 @@ if not exists (
 )   
 throw 50260, 'Customer ID is not found', 1
 
-
 if not exists (
     select @thisprodid
     from PRODUCT
@@ -905,14 +904,9 @@ GO
 
 -- should work
 exec ADD_COMPLEX_SALE @pcustid = 3, @pprodid = 2000, @pqty = 20, @pdate = '20191007';
-go
-select * from SALE
 exec ADD_COMPLEX_SALE @pcustid = 22, @pprodid = 2000, @pqty = 30, @pdate = '20000922';
-go
-select * from SALE
 exec ADD_COMPLEX_SALE @pcustid = 22, @pprodid = 2209, @pqty = 10, @pdate = '19990921';
-go
-select * from SALE
+
 
 -- ERROR 50230, sale quantity out of range
 exec ADD_COMPLEX_SALE @pcustid = 3, @pprodid = 2209, @pqty = 2345, @pdate = '19990921';
@@ -928,3 +922,51 @@ exec ADD_COMPLEX_SALE @pcustid = 11, @pprodid = 2209, @pqty = 10, @pdate = '1999
 
 -- ERROR 50270, product not found
 exec ADD_COMPLEX_SALE @pcustid = 3, @pprodid = 1234, @pqty = 10, @pdate = '19990921';
+
+-- ------------------------------ GET_ALL_SALES ------------------------------
+
+If OBJECT_ID('GET_ALL_SALES') is not NULL
+Drop procedure GET_ALL_SALES;
+Go
+
+create PROCEDURE GET_ALL_SALES
+    @POUTCUR CURSOR VARYING OUTPUT
+as
+begin
+    begin try 
+set @POUTCUR = CURSOR for SELECT *
+    from SALE;
+    open @POUTCUR;
+end TRY
+begin catch 
+declare @ERRORMESSAGE NVARCHAR(MAX) = ERROR_MESSAGE();
+throw 50000, @ERRORMESSAGE, 1
+end CATCH
+end
+GO
+
+begin
+    declare @CUR CURSOR;
+
+    exec GET_ALL_SALES @POUTCUR = @CUR OUTPUT;
+
+    declare 
+@saleID Int,
+@custID Int,
+@prodID INT,
+@qty INT,
+@price money,
+@saleDate date;
+
+    fetch next from @CUR into @saleID, @custid, @prodID, @qty, @price, @saleDate;
+
+    while @@FETCH_STATUS = 0
+
+    begin
+        print(concat('Sale ID: ', @saleID, ', ', 'Customer ID: ', @custid, ', ', 'Product ID: ', @prodID, ', ', 'Quantity: ', @qty, ', ', 'Price: ', @price, ', ', 'Sale Date: ', @saleDate))
+        FETCH next from @CUR into @saleID, @custid, @prodID, @qty, @price, @saleDate;
+    END
+
+    close @CUR
+    deallocate @CUR
+end
