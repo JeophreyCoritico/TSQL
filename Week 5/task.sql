@@ -987,8 +987,8 @@ set @currentDate = cast(convert(char(8), getdate(), 112) as int)
 declare @dateWithin int
 set @dateWithin = @currentDate - @pdays
 
-Declare @totalQTY INT
-    Select @totalQTY = sum(QtyPriProd)
+Declare @total INT
+    Select @total = sum(QtyPriProd)
     from (
     select QTY * PRICE as QtyPriProd
         from SALE
@@ -1001,9 +1001,9 @@ set @concDateWithin = CONVERT(datetime, convert(varchar(10), @dateWithin))
 declare @concCurrentDate date 
 set  @concCurrentDate = CONVERT(datetime, convert(varchar(10), @currentDate))
 
-print(concat('Number of day(s) of current date: ', @pdays, ' Days, ', 'Date chosen: ', @concDateWithin, ', ', 'Current Date: ', @concCurrentDate, ', ', ' Total: ', @totalQTY))
+print(concat('Number of day(s) of current date: ', @pdays, ' Days, ', 'Date chosen: ', @concDateWithin, ', ', 'Current Date: ', @concCurrentDate, ', ', ' Total: ', @total))
 
-select @totalQTY as 'Quantity Total:'
+select @total as 'Total:'
 
 end TRY
 begin CATCH
@@ -1019,9 +1019,75 @@ exec COUNT_PRODUCT_SALES @pdays = 3;
 
 -- ------------------------------ DELETE_SALE ------------------------------
 
-If OBJECT_ID('COUNT_PRODUCT_SALES') is not NULL
-Drop procedure COUNT_PRODUCT_SALES;
+If OBJECT_ID('DELETE_SALE') is not NULL
+Drop procedure DELETE_SALE;
 Go
 
-create PROCEDURE COUNT_PRODUCT_SALES @pdays INT
+create PROCEDURE DELETE_SALE 
 as
+begin
+begin TRY
+
+declare @minSale INT
+select @minSale = MIN(SaleID) 
+    from (
+    select SALEID
+        from SALE
+) a
+
+declare @minSaleCustID INT
+select @minSaleCustID 
+    from (
+    select CUSTID
+        from SALE
+        where SALEID = @minSale
+) a
+
+declare @minSaleProdID INT
+select @minSaleProdID 
+    from (
+    select PRODID
+        from SALE
+        where SALEID = @minSale
+) a
+
+declare @minSaleQtyPrice INT
+select @minSaleProdID
+    from (
+    select QTY * PRICE as QtyPrice
+        from SALE
+        where SALEID = @minSale
+) a
+
+if not exists (
+    select @minSale
+    from SALE
+    where SALEID = @minSale
+)   
+throw 50280, 'No sale rows found', 1
+
+set @minSaleQtyPrice = @minSaleQtyPrice * -1
+
+exec UPD_CUST_SALESYTD @pcustid = @minSaleCustID, @pamt = @minSaleQtyPrice;
+exec UPD_PROD_SALESYTD @pprodid = @minSaleCustID, @pamt = @minSaleQtyPrice;
+
+print(concat(@minSale, ' ', @minSaleCustID, ' ', @minSaleProdID))
+
+select @minSale as 'SALEID:'
+
+delete from SALE
+    where SALEID = @minSale
+
+end TRY
+begin  CATCH
+    if ERROR_NUMBER() = 50280
+        THROW
+    --         BEGIN
+    --     Declare @ERRORMESSAGE NVARCHAR(MAX) = ERROR_MESSAGE();
+    --     throw 50000, @ERRORMESSAGE, 1
+    -- END;
+end CATCH 
+end
+go
+
+exec DELETE_SALE
