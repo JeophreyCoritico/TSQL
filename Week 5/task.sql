@@ -499,6 +499,7 @@ End
 -- should work
 exec UPD_CUSTOMER_STATUS @pcustid = 1, @pstatus = 'ok';
 exec UPD_CUSTOMER_STATUS @pcustid = 2, @pstatus = 'suspend';
+exec UPD_CUSTOMER_STATUS @pcustid = 3, @pstatus = 'suspend';
 -- 50120 Cust ID not found
 exec UPD_CUSTOMER_STATUS @pcustid = 40, @pstatus = 'suspend';
 -- 50130 Invalid status value
@@ -1033,14 +1034,15 @@ begin
 begin TRY
 
 declare @minSale INT
+set @minSale = 0;
 select @minSale = MIN(SaleID) 
     from (
-    select SALEID
+    select SaleID
         from SALE
 ) a
 
 declare @minSaleCustID INT
-select @minSaleCustID 
+select @minSaleCustID = MIN(CUSTID)
     from (
     select CUSTID
         from SALE
@@ -1048,7 +1050,7 @@ select @minSaleCustID
 ) a
 
 declare @minSaleProdID INT
-select @minSaleProdID 
+select @minSaleProdID = MIN(PRODID)
     from (
     select PRODID
         from SALE
@@ -1056,7 +1058,7 @@ select @minSaleProdID
 ) a
 
 declare @minSaleQtyPrice INT
-select @minSaleProdID
+select @minSaleQtyPrice = MIN(QtyPrice)
     from (
     select QTY * PRICE as QtyPrice
         from SALE
@@ -1186,6 +1188,9 @@ exec DELETE_CUSTOMER @pCustID = 3
 -- ERROR 50290, Customer ID is not found
 exec DELETE_CUSTOMER @pCustID = 300
 
+-- ERROR 50300, customer in sales exist
+exec DELETE_CUSTOMER @pCustID = 22
+
 -- ------------------------------ DELETE_PRODUCT ------------------------------
 
 If OBJECT_ID('DELETE_PRODUCT') is not NULL
@@ -1208,7 +1213,7 @@ throw 50310, 'Product ID is not found', 1
 if exists (
     select @pProdID
     from SALE
-    where CUSTID = @pProdID
+    where PRODID = @pProdID
 )   
 throw 50320, 'Product cannot be deleted as sales exist', 1
 
@@ -1234,3 +1239,6 @@ exec DELETE_PRODUCT @pProdID = 2209
 
 -- ERROR 50310, Product ID is not found 
 exec DELETE_PRODUCT @pProdID = 77
+
+-- ERROR 50320, product in sales exist
+exec DELETE_PRODUCT @pProdID = 2000
