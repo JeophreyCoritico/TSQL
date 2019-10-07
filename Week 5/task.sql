@@ -807,3 +807,92 @@ exec ADD_LOCATION @PLOCCODE = 31, @PMINQTY = 67, @PMAXQTY = 35;
 select *
 from [LOCATION];
 
+-- ------------------------------ ADD_COMPLEX_SALE ------------------------------
+
+If OBJECT_ID('ADD_COMPLEX_SALE') is not NULL
+Drop procedure ADD_COMPLEX_SALE;
+Go
+
+create PROCEDURE ADD_COMPLEX_SALE
+    @pcustid int,
+    @pprodid int,
+    @pqty INT,
+    @pdate NVARCHAR(Max)
+as
+BEGIN
+    begin TRY
+DECLARE 
+@prices int 
+select @prices = SELLING_PRICE
+    from PRODUCT
+    where PRODID = @pprodid;  
+
+DECLARE
+@pqtypriceprod int = @pqty * @prices;
+
+    DECLARE
+@thiscustid int = @pcustid,
+@thisprodid int = @pprodid;
+
+
+    DECLARE @Id INT
+    set @Id = @Id + 1
+
+if not exists (
+    select @thiscustid
+    from CUSTOMER
+    where CUSTID = @thiscustid
+)   
+throw 50260, 'Customer ID is not found', 1
+
+
+if not exists (
+    select @thisprodid
+    from PRODUCT
+    where PRODID = @thisprodid
+)   
+throw 50270, 'Product ID is not found', 1
+
+if exists (
+    SELECT @thiscustid
+    from CUSTOMER
+    WHERE CUSTID = @thiscustid and STATUS = 'SUSPEND'
+)
+THROW 50240, 'Customer status is not OK', 1
+
+if @pqty < 1 or @pqty > 999
+THROW 50230, 'Sale quantity is out of range', 1
+
+if @pdate like '[A-Za-z]%'
+throw 50250, 'Date not valid', 1
+
+select CONVERT([datetime], @pdate, 111);
+
+exec UPD_CUST_SALESYTD @pcustid = @thiscustid, @pamt = @pqtypriceprod;
+exec UPD_PROD_SALESYTD @pprodid = @thisprodid, @pamt = @pqtypriceprod;
+
+        Insert into [SALE]
+        (SALEID, CUSTID, PRODID, QTY, PRICE, SALEDATE)
+    values
+        (@Id, @pcustid, @pprodid, @pqty, @prices, @pdate);
+
+end TRY
+
+begin CATCH 
+if ERROR_NUMBER() = 50230
+THROW
+else if ERROR_NUMBER() = 50240
+THROW
+else if ERROR_NUMBER() = 50250
+THROW
+else if ERROR_NUMBER() = 50260
+THROW
+else if ERROR_NUMBER() = 50270
+THROW
+    BEGIN
+        Declare @ERRORMESSAGE NVARCHAR(MAX) = ERROR_MESSAGE();
+        throw 50000, @ERRORMESSAGE, 1
+    END;
+end CATCH
+End
+
