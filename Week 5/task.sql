@@ -988,9 +988,9 @@ declare @dateWithin int
 set @dateWithin = @currentDate - @pdays
 
 Declare @totalQTY INT
-    Select @totalQTY = sum(QTY)
+    Select @totalQTY = sum(QtyPriProd)
     from (
-    select QTY
+    select QTY * PRICE as QtyPriProd
         from SALE
         where cast(convert(char(8), SALEDATE, 112) as int) <= @dateWithin
 ) a 
@@ -1003,7 +1003,7 @@ set  @concCurrentDate = CONVERT(datetime, convert(varchar(10), @currentDate))
 
 print(concat('Number of day(s) of current date: ', @pdays, ' Days, ', 'Date chosen: ', @concDateWithin, ', ', 'Current Date: ', @concCurrentDate, ', ', ' Total: ', @totalQTY))
 
-select @totalQTY as 'Total:'
+select @totalQTY as 'Quantity Total:'
 
 end TRY
 begin CATCH
@@ -1016,3 +1016,12 @@ END
 GO
 
 exec COUNT_PRODUCT_SALES @pdays = 3;
+
+-- ------------------------------ DELETE_SALE ------------------------------
+
+If OBJECT_ID('COUNT_PRODUCT_SALES') is not NULL
+Drop procedure COUNT_PRODUCT_SALES;
+Go
+
+create PROCEDURE COUNT_PRODUCT_SALES @pdays INT
+as
