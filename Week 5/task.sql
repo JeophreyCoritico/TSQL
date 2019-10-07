@@ -836,7 +836,7 @@ DECLARE
 
 
     DECLARE @Id INT
-    set @Id = 0
+    set @Id = 0;
     Select @Id = MAX(SALEID)
     from (
     select SALEID
@@ -1151,6 +1151,14 @@ if not exists (
 )   
 throw 50290, 'Customer ID is not found', 1
 
+
+if exists (
+    select @pCustID
+    from SALE
+    where CUSTID = @pcustid
+)   
+throw 50300, 'Customer cannot be deleted as sales exist', 1
+
 delete from CUSTOMER
     where CUSTID = @pCustID
 
@@ -1158,6 +1166,8 @@ end TRY
 begin CATCH
 if ERROR_NUMBER() = 50290
 THROW
+else if ERROR_NUMBER() = 50300
+throw
 BEGIN
         Declare @ERRORMESSAGE NVARCHAR(MAX) = ERROR_MESSAGE();
         throw 50000, @ERRORMESSAGE, 1
@@ -1171,3 +1181,52 @@ exec DELETE_CUSTOMER @pCustID = 3
 
 -- ERROR 50290, Customer ID is not found
 exec DELETE_CUSTOMER @pCustID = 300
+
+-- ------------------------------ DELETE_PRODUCT ------------------------------
+
+If OBJECT_ID('DELETE_PRODUCT') is not NULL
+Drop procedure DELETE_PRODUCT;
+Go
+
+create PROCEDURE DELETE_PRODUCT @pProdID int  
+as
+begin
+begin TRY
+
+if not exists (
+    select @pProdID
+    from PRODUCT
+    where PRODID = @pProdID
+)   
+throw 50310, 'Product ID is not found', 1
+
+
+if exists (
+    select @pProdID
+    from SALE
+    where CUSTID = @pProdID
+)   
+throw 50320, 'Product cannot be deleted as sales exist', 1
+
+delete from PRODUCT
+    where PRODID = @pProdID
+
+end TRY
+begin CATCH
+if ERROR_NUMBER() = 50310
+THROW
+else if ERROR_NUMBER() = 50320
+throw
+BEGIN
+        Declare @ERRORMESSAGE NVARCHAR(MAX) = ERROR_MESSAGE();
+        throw 50000, @ERRORMESSAGE, 1
+    END;
+end CATCH 
+end
+go
+
+-- should work
+exec DELETE_PRODUCT @pProdID = 2209
+
+-- ERROR 50310, Product ID is not found 
+exec DELETE_PRODUCT @pProdID = 77
