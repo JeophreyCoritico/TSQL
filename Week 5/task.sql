@@ -814,6 +814,7 @@ Drop procedure ADD_COMPLEX_SALE;
 Go
 
 create PROCEDURE ADD_COMPLEX_SALE
+    -- @psaleid int,
     @pcustid int,
     @pprodid int,
     @pqty INT,
@@ -843,6 +844,9 @@ DECLARE
         from SALE
 ) a
     set @Id = @Id + 1
+
+    if @id is null 
+    set @Id = 1;
 
 if not exists (
     select @thiscustid
@@ -879,7 +883,7 @@ exec UPD_PROD_SALESYTD @pprodid = @thisprodid, @pamt = @pqtypriceprod;
         Insert into [SALE]
         (SALEID, CUSTID, PRODID, QTY, PRICE, SALEDATE)
     values
-        (@Id, @pcustid, @pprodid, @pqty, @prices, @pdate);
+        (@id, @pcustid, @pprodid, @pqty, @prices, @pdate);
 
 end TRY
 
