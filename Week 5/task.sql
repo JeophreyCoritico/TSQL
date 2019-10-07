@@ -1082,12 +1082,92 @@ end TRY
 begin  CATCH
     if ERROR_NUMBER() = 50280
         THROW
-    --         BEGIN
-    --     Declare @ERRORMESSAGE NVARCHAR(MAX) = ERROR_MESSAGE();
-    --     throw 50000, @ERRORMESSAGE, 1
-    -- END;
+            BEGIN
+        Declare @ERRORMESSAGE NVARCHAR(MAX) = ERROR_MESSAGE();
+        throw 50000, @ERRORMESSAGE, 1
+    END;
 end CATCH 
 end
 go
 
 exec DELETE_SALE
+
+-- ------------------------------ DELETE_ALL_SALES ------------------------------
+
+If OBJECT_ID('DELETE_ALL_SALES') is not NULL
+Drop function DELETE_ALL_SALES;
+Go
+
+If OBJECT_ID('DeleteSALES') is not NULL
+Drop procedure DeleteSALES;
+Go
+
+create PROCEDURE DeleteSALES
+as
+Begin
+    Delete from SALE
+
+update CUSTOMER SET
+SALES_YTD = 0;
+
+update PRODUCT SET
+SALES_YTD = 0;
+
+end
+go
+
+Create Function DELETE_ALL_SALES() RETURNS INT as
+BEGIN
+    Declare @NumRows INT
+    Select @NumRows = count(*)
+    from (
+    select SALEID
+        from SALE
+) a
+    return @NumRows
+END;
+GO
+
+Begin
+    Select dbo.DELETE_ALL_SALES() as 'Number of rows deleted:';
+    exec DeleteSALES;
+End;
+
+-- ------------------------------ DELETE_CUSTOMER ------------------------------
+
+If OBJECT_ID('DELETE_CUSTOMER') is not NULL
+Drop procedure DELETE_CUSTOMER;
+Go
+
+create PROCEDURE DELETE_CUSTOMER @pCustID int  
+as
+begin
+begin TRY
+
+if not exists (
+    select @pCustID
+    from CUSTOMER
+    where CUSTID = @pcustid
+)   
+throw 50290, 'Customer ID is not found', 1
+
+delete from CUSTOMER
+    where CUSTID = @pCustID
+
+end TRY
+begin CATCH
+if ERROR_NUMBER() = 50290
+THROW
+BEGIN
+        Declare @ERRORMESSAGE NVARCHAR(MAX) = ERROR_MESSAGE();
+        throw 50000, @ERRORMESSAGE, 1
+    END;
+end CATCH 
+end
+go
+
+-- should work
+exec DELETE_CUSTOMER @pCustID = 3
+
+-- ERROR 50290, Customer ID is not found
+exec DELETE_CUSTOMER @pCustID = 300
