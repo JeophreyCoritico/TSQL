@@ -117,6 +117,8 @@ exec ADD_COMPLEX_SALE @pcustid = 3, @pprodid = 2000, @pqty = 20, @pdate = '20191
 exec ADD_COMPLEX_SALE @pcustid = 22, @pprodid = 2000, @pqty = 30, @pdate = '20000922';
 exec ADD_COMPLEX_SALE @pcustid = 22, @pprodid = 2209, @pqty = 10, @pdate = '19990921';
 
+exec ADD_COMPLEX_SALE @pcustid = 22, @pprodid = 2209, @pqty = 10, @pdate = '20191004';
+
 -- get all sales
 If OBJECT_ID('GET_ALL_SALES') is not NULL
 Drop procedure GET_ALL_SALES;

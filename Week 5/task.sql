@@ -970,3 +970,49 @@ begin
     close @CUR
     deallocate @CUR
 end
+
+-- ------------------------------ COUNT_PRODUCT_SALES ------------------------------
+
+If OBJECT_ID('COUNT_PRODUCT_SALES') is not NULL
+Drop procedure COUNT_PRODUCT_SALES;
+Go
+
+create PROCEDURE COUNT_PRODUCT_SALES @pdays INT
+as
+begin
+begin try
+DECLARE @currentDate int 
+set @currentDate = cast(convert(char(8), getdate(), 112) as int)
+
+declare @dateWithin int
+set @dateWithin = @currentDate - @pdays
+
+Declare @totalQTY INT
+    Select @totalQTY = sum(QTY)
+    from (
+    select QTY
+        from SALE
+        where cast(convert(char(8), SALEDATE, 112) as int) <= @dateWithin
+) a 
+
+declare @concDateWithin date 
+set @concDateWithin = CONVERT(datetime, convert(varchar(10), @dateWithin))
+
+declare @concCurrentDate date 
+set  @concCurrentDate = CONVERT(datetime, convert(varchar(10), @currentDate))
+
+print(concat('Number of day(s) of current date: ', @pdays, ' Days, ', 'Date chosen: ', @concDateWithin, ', ', 'Current Date: ', @concCurrentDate, ', ', ' Total: ', @totalQTY))
+
+select @totalQTY as 'Total:'
+
+end TRY
+begin CATCH
+BEGIN
+        Declare @ERRORMESSAGE NVARCHAR(MAX) = ERROR_MESSAGE();
+        throw 50000, @ERRORMESSAGE, 1
+    END;
+end catch 
+END
+GO
+
+exec COUNT_PRODUCT_SALES @pdays = 3;
